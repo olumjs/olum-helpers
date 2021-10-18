@@ -6,21 +6,14 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Olum Helpers</title>
-  <style>
-    main {
-      /* height: 0;  */
-      /* overflow: hidden; */
-    }
-  </style>
 </head>
 
 <body>
-  <main id="mainID" class="mainClass">
+  <main>
     Lorem ipsum dolor sit, amet consectetur adipisicing elit. Exercitationem reprehenderit rerum ad cumque magnam. Quisquam earum laborum quia
     cumque ex. Excepturi eos accusantium fugit illo sit tempora dolorem odio cupiditate.
   </main>
-
-  <button>toggle height</button>
+  <button>toggle</button>
 
   <li>
     <a href="#" tolang="en">en</a>
@@ -39,14 +32,11 @@
     debug(main, "error");
 
     // origin
-    const origin = new Origin();
-    origin.get("https://jsonplaceholder.typicode.com/todos/1")
+    new Origin().get("https://jsonplaceholder.typicode.com/todos/1")
       .then(debug).catch(debug);
 
-
     // set template
-    let string = "<div>{{name}}</div>";
-    const temp = setTemp(string, {
+    const temp = setTemp("<div>{{name}}</div>", {
       name: "jesus"
     });
     debug(temp);
@@ -58,13 +48,11 @@
     let ar = {
       olum: "اولوم"
     }
-
     new Localize({
       en,
       ar
     }, ["ar"]);
     console.log("olum".trans());
-
 
     // service - OOP
     // class API extends Service {
@@ -93,7 +81,6 @@
     //   todo: "take out the trash",
     //   id: 100
     // });
-
 
     // service - plain object
     const service = new Service("ApiDataLoaded");
