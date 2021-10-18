@@ -40,7 +40,6 @@
     return !!(isObj(obj) && Array.isArray(Object.keys(obj)) && Object.keys(obj).length);
   }
 
-
   /* String Methods - uppercase, lowercase, capitalize */
   String.prototype.upper = function () {
     return this.toUpperCase();
@@ -74,15 +73,20 @@
   /* toggle height of elements */
   Element.prototype.toggle = function (time) {
     if (!isDef(time)) time = 0.3;
-    this.style.transition = "height " + time + "s ease-in-out";
-    if (this.clientHeight == 0) {
-      this.style.height = "auto";
-      var h = this.clientHeight + "px";
-      this.style.height = "0";
-      setTimeout(function () {
-        this.style.height = h
-      }, 0);
-    } else this.style.height = "0";
+    var elm = this;
+    elm.style.transition = "height " + time + "s ease-in-out";
+    elm.style.overflow = "hidden";
+    elm.style.height = elm.clientHeight + "px";
+    setTimeout(function () {
+      if (elm.clientHeight == 0) {
+        elm.style.height = "auto";
+        var h = elm.clientHeight + "px";
+        elm.style.height = "0";
+        setTimeout(function () {
+          elm.style.height = h;
+        }, 0);
+      } else elm.style.height = "0";
+    }, 100);
   };
 
   /* works in browser in dev mode */
@@ -142,137 +146,122 @@
     }
   }
 
+  /* fetch api */
+  function Origin() {
+    if (!(this instanceof Origin)) throw new Error("can't invoke 'Origin' without 'new' keyword");
+    var xhr = new XMLHttpRequest();
 
-  /**
-   * @example 
-   * origin.method(url, {
-    body: {
-      name: "olumjs"
-    },
-    headers:{
-      "Content-Type": "application/json"
-    }
-  }).then(console.log).catch(console.error)
-   */
-
-  class Origin {
-    constructor() {
-      if (!(this instanceof Origin)) console.error("can't invoke 'Origin' without 'new' keyword");
-      this.xhr = new XMLHttpRequest();
-    }
-
-    setParams(data) {
+    function setParams(data) {
       if (isFullObj(data)) {
+        // headers
         if (data.hasOwnProperty("headers") && isFullObj(data.headers)) {
-          for (let key in data.headers) {
-            this.xhr.setRequestHeader(key, data.headers[key]);
+          for (var key in data.headers) {
+            xhr.setRequestHeader(key, data.headers[key]);
           }
         }
-        if (data.hasOwnProperty("body") && isFullObj(data.body)) {
-          return JSON.stringify(data.body);
+        // body 
+        if (data.hasOwnProperty("body")) {
+          if (isFullObj(data.body)) return JSON.stringify(data.body); // payload
+          else if (typeof data.body == "string") return data.body; // form data
         }
-        return null;
       }
+      return null;
     }
 
-    onload(resolve, reject) {
-      return (this.xhr.onreadystatechange = () => {
-        if (this.xhr.readyState === 4) {
-          if (this.xhr.status === 0 || (this.xhr.status >= 200 && this.xhr.status <= 299)) {
-            try {
-              resolve(JSON.parse(this.xhr.responseText));
-            } catch (err) {
-              resolve(this.xhr.responseText);
+    function req(method, url, data) {
+      return new Promise((resolve, reject) => {
+        if (!isDef(data)) data = {};
+        xhr.open(method, url, true);
+        var body = setParams(data);
+
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 0 || (xhr.status >= 200 && xhr.status <= 299)) {
+              try {
+                resolve(JSON.parse(xhr.responseText));
+              } catch (err) {
+                resolve(xhr.responseText);
+              }
+            } else if (xhr.status >= 400 && xhr.status <= 599) {
+              reject("Couldn't reach the server");
             }
-          } else if (this.xhr.status >= 400 && this.xhr.status <= 599) {
-            reject(`couldn't reach the server`);
           }
         }
+
+        xhr.onerror = function () {
+          return reject("Network Error");
+        }
+        body !== null ? xhr.send(body) : xhr.send();
       });
     }
 
-    req(method, url, data = {}) {
-      return new Promise((resolve, reject) => {
-        this.xhr.open(method, url, true);
-        const form = this.setParams(data);
-        this.onload(resolve, reject);
-        this.xhr.onerror = () => reject(`network error`);
-        form !== null ? this.xhr.send(form) : this.xhr.send();
-      });
-    }
-
-    get = (url, data = {}) => this.req("GET", url, data);
-    post = (url, data = {}) => this.req("POST", url, data);
-    delete = (url, data = {}) => this.req("DELETE", url, data);
-    put = (url, data = {}) => this.req("PUT", url, data);
-    patch = (url, data = {}) => this.req("PATCH", url, data);
+    this.get = function (url, data) {
+      return req("GET", url, data);
+    };
+    this.post = function (url, data) {
+      return req("POST", url, data);
+    };
+    this.delete = function (url, data) {
+      return req("DELETE", url, data);
+    };
+    this.put = function (url, data) {
+      return req("PUT", url, data);
+    };
+    this.patch = function (url, data) {
+      return req("PATCH", url, data);
+    };
   }
 
-  class Localize {
-    key = "tolang";
+  /* translate string */
+  function Localize(dictionary, rtlLangs) {
+    console.warn("localize");
+    if (!(this instanceof Localize)) throw new Error("can't invoke 'Localize' without 'new' keyword");
+    if (!isDef(dictionary)) throw new Error("dictionary object is missing!");
+    if (!isDef(rtlLangs)) rtlLangs = [];
 
-    constructor(dictionary, rtlLangs = []) {
-      this.dictionary = dictionary;
-      this.rtlLangs = rtlLangs;
-      this.init();
-    }
+    var key = "tolang";
+    var current = localStorage.getItem(key) || "en";
 
-    init() {
-      this.detect();
-      const _this = this;
-      String.prototype.trans = function trans() {
-        const str = this;
-        const locales = _this.dictionary;
-        const lang = _this.current();
-        const langObj = locales[lang];
-        const err = `"${str}" property is misspelled or missed at "src/locales/${lang}.js"`;
-        let translatedStr;
-
-        if (typeof locales != "undefined" && typeof langObj != "undefined") {
-          for (let key in langObj) {
-            if (str === key) translatedStr = langObj[key];
-          }
-        } else {
-          debug("locales or langObj are not defined! @ String.prototype.trans", "warn");
-        }
-
-        return translatedStr || err;
-      };
-      this.tolang();
-    }
-
-    detect() {
-      const html = $("html");
-      const body = $("body");
-      if (html && body) {
-        if (this.rtlLangs.includes(this.current())) {
-          body.classList.add("RTL");
-          html.dir = "rtl";
-        } else {
-          body.classList.remove("RTL");
-          html.dir = "";
-        }
+    // handle DOM
+    var html = $("html");
+    var body = $("body");
+    if (html && body) {
+      if (rtlLangs.indexOf(current) !== -1) {
+        body.className += " RTL";
+        html.dir = "rtl";
+      } else {
+        body.className = body.className.replace(/RTL/g, "");
+        html.dir = "";
       }
     }
 
-    current() {
-      return localStorage.getItem(this.key) || "en";
-    }
+    // enable lang btns 
+    document.on("click", function (e) {
+      if (e.target.hasAttribute(key)) {
+        // disable href in anchor
+        if (e.target.nodeName === "A") e.target.setAttribute("href", "javascript:void(0)");
+        // update current lang
+        localStorage.setItem(key, e.target.getAttribute(key));
+        location.reload();
+      }
+    });
 
-    tolang() {
-      document.on("click", e => {
-        if (e.target.hasAttribute(this.key)) {
-          // disable href in anchor
-          if (e.target.nodeName === "A") e.target.setAttribute("href", "javascript:void(0)");
-          // disable icons in links
-          [...e.target.children].forEach(icon => (icon.style.pointerEvents = "none"));
-          // update current lang
-          const lang = e.target.getAttribute(this.key);
-          localStorage.setItem(this.key, lang);
-          location.reload();
+    String.prototype.trans = function () {
+      var str = this;
+      var langObj = dictionary[current];
+      var warn = str + " property is misspelled or missed";
+      var sentence;
+
+      if (typeof dictionary != "undefined" && typeof langObj != "undefined") {
+        for (var _key in langObj) {
+          if (str === _key) sentence = langObj[_key];
         }
-      });
-    }
+      } else {
+        console.warn("dictionary is not defined @trans()");
+      }
+      return sentence || warn;
+    };
+
   }
 
   return {

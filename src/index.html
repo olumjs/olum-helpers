@@ -1,21 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Olum Helpers</title>
-  </head>
 
-  <body>
-    <main id="mainID" class="mainClass">
-      Lorem ipsum dolor sit, amet consectetur adipisicing elit. Exercitationem reprehenderit rerum ad cumque magnam. Quisquam earum laborum quia
-      cumque ex. Excepturi eos accusantium fugit illo sit tempora dolorem odio cupiditate.
-    </main>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Olum Helpers</title>
+  <style>
+    main {
+      /* height: 0;  */
+      /* overflow: hidden; */
+    }
+  </style>
+</head>
 
-    <script src="olum-helpers.js"></script>
-    <script>
+<body>
+  <main id="mainID" class="mainClass">
+    Lorem ipsum dolor sit, amet consectetur adipisicing elit. Exercitationem reprehenderit rerum ad cumque magnam. Quisquam earum laborum quia
+    cumque ex. Excepturi eos accusantium fugit illo sit tempora dolorem odio cupiditate.
+  </main>
 
-    </script>
-  </body>
+  <button>toggle height</button>
+
+  <li>
+    <a href="#" tolang="en">en</a>
+  </li>
+  <li>
+    <a href="#" tolang="ar">ar</a>
+  </li>
+
+  <script src="olum-helpers.js"></script>
+  <script>
+    // selector & debug
+    const main = $("main");
+    debug(main);
+    debug(main, "warn");
+    debug(main, "err");
+    debug(main, "error");
+
+    // origin
+    const origin = new Origin();
+    origin.get("https://jsonplaceholder.typicode.com/todos/1")
+      .then(debug).catch(debug);
+
+
+    // set template
+    let string = "<div>{{name}}</div>";
+    const temp = setTemp(string, {
+      name: "jesus"
+    });
+    debug(temp);
+
+    // trans
+    let en = {
+      olum: "olumjs"
+    }
+    let ar = {
+      olum: "اولوم"
+    }
+
+    new Localize({
+      en,
+      ar
+    }, ["ar"]);
+    console.log("olum".trans());
+
+
+    // service - OOP
+    // class API extends Service {
+    //   constructor() {
+    //     super("ApiDataLoaded");
+    //   }
+    //   todos = [];
+    //   add(todo) {
+    //     this.todos.push(todo);
+    //     this.trigger();
+    //   }
+    //   get() {
+    //     return this.todos;
+    //   }
+    // }
+    // const api = new API();
+
+    // // listen to changes
+    // window.on(api.event, () => {
+    //   const todos = api.get();
+    //   console.warn(todos);
+    // });
+
+    // // fire changes
+    // api.add({
+    //   todo: "take out the trash",
+    //   id: 100
+    // });
+
+
+    // service - plain object
+    const service = new Service("ApiDataLoaded");
+    const api = {
+      event: service.event,
+      todos: [],
+      add(todo) {
+        this.todos.push(todo);
+        service.trigger();
+      },
+      get() {
+        return this.todos;
+      }
+    }
+
+    // listen to changes
+    window.on(api.event, () => {
+      const todos = api.get();
+      console.warn(todos);
+    });
+
+    // fire changes
+    api.add({
+      todo: "take out the trash",
+      id: 100
+    });
+
+    // string
+    debug("simple text".cap())
+    debug("SIMPLE TEXT".lower())
+    debug("simple text".upper())
+
+    // toggle
+    const btn = $("button");
+    btn.on("click", () => main.toggle());
+  </script>
+</body>
+
 </html>
