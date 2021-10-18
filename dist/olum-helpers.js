@@ -214,7 +214,6 @@
 
   /* translate string */
   function Localize(dictionary, rtlLangs) {
-    console.warn("localize");
     if (!(this instanceof Localize)) throw new Error("can't invoke 'Localize' without 'new' keyword");
     if (!isDef(dictionary)) throw new Error("dictionary object is missing!");
     if (!isDef(rtlLangs)) rtlLangs = [];
