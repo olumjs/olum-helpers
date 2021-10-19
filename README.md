@@ -66,34 +66,6 @@ olum helpers are methods for boosting your developemnt process
       );
       console.log("olum".trans());
 
-      // service - OOP
-      // class API extends Service {
-      //   constructor() {
-      //     super("ApiDataLoaded");
-      //   }
-      //   todos = [];
-      //   add(todo) {
-      //     this.todos.push(todo);
-      //     this.trigger();
-      //   }
-      //   get() {
-      //     return this.todos;
-      //   }
-      // }
-      // const api = new API();
-
-      // // listen to changes
-      // window.on(api.event, () => {
-      //   const todos = api.get();
-      //   console.warn(todos);
-      // });
-
-      // // fire changes
-      // api.add({
-      //   todo: "take out the trash",
-      //   id: 100
-      // });
-
       // service - plain object
       const service = new Service("ApiDataLoaded");
       const api = {
@@ -206,4 +178,93 @@ debug("simple text".upper());
 // toggle
 const btn = $("button");
 btn.on("click", () => main.toggle());
+```
+
+---
+
+### sharing data between reactjs components
+
+`api.js`
+```javascript
+import { Service } from "olum-helpers";
+
+class API extends Service {
+  constructor() {
+    super("ApiDataLoaded");
+  }
+
+  todos = [];
+
+  add(todo) {
+    this.todos.push(todo);
+    this.trigger();
+  }
+
+  get() {
+    return this.todos;
+  }
+
+  remove(id) {
+    this.todos = this.todos.filter(todo => todo.id !== id);
+    this.trigger();
+  }
+}
+
+export const api = new API();
+```
+
+`AddTodo.js`
+```javascript
+import { useState } from "react";
+import { api } from "./api.js"; // import the api service
+
+const AddTodo = () => {
+  const [input, setInput] = useState("");
+
+  const handleSubmit = e => {
+    e.preventDefault();
+    const todo = { title: input, id: new Date().getTime() };
+    api.add(todo); // call add method in api service
+    setInput("");
+  };
+
+  return (
+    <div>
+      <form onSubmit={handleSubmit}>
+        <input type="text" placeholder="Enter Todo..." value={input} onChange={e => setInput(e.target.value)} />
+        <button type="submit">add</button>
+      </form>
+    </div>
+  );
+};
+
+export default AddTodo;
+```
+
+`Todos.js`
+```javascript
+import { useState } from "react";
+import { api } from "./api";
+
+const Todos = () => {
+  const [todos, setTodos] = useState([]);
+  window.on(api.event, () => setTodos([...api.get()]));
+
+  const handleDelete = id => api.remove(id);
+
+  return (
+    <div>
+      <ul>
+        {todos.map(todo => (
+          <li key={todo.id}>
+            {todo.title} 
+            <button onClick={() => handleDelete(todo.id)}>x</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default Todos;
 ```
