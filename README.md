@@ -268,3 +268,4 @@ const Todos = () => {
 
 export default Todos;
 ```
+`Now you need to include <Todos /> in the root component to be shown in the UI`
